@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheOneWealthWave | Premium Investment Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+    
+    <!-- Floating Particles -->
+    <div id="particles-js"></div>
+
+    <!-- Header -->
+    <header class="animate__animated animate__fadeInDown">
+        <div class="logo">
+            <h1><span class="gradient-text">TheOneWealthWave</span></h1>
+            <div class="live-badge pulse">LIVE</div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#home" class="nav-link">Home</a></li>
+                <li><a href="#markets" class="nav-link">Markets</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+                <a href="user.html?form=login" class="btn"><i class="fas fa-sign-in-alt"></i> Login</a>
+                <a href="user.html?form=register" class="btn"><i class="fas fa-user-plus"></i> Register</a>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content animate__animated animate__zoomIn">
+            <h1 class="typing-text"></h1>
+            <p class="animate__animated animate__fadeInUp animate__delay-1s">Join the revolution in smart investments</p>
+            <a href="#markets" class="cta-button animate__animated animate__bounceIn animate__delay-2s">
+                Explore Live Markets <i class="fas fa-arrow-down"></i>
+            </a>
+        </div>
+        <div class="scroll-down animate__animated animate__bounce animate__infinite">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </section>
+
+    <!-- Markets Section -->
+    <section class="markets" id="markets">
+        <h2 class="section-title animate__animated animate__fadeIn">Real-Time Market Data</h2>
+        
+        <!-- Crypto Market -->
+        <div class="market-card animate__animated animate__fadeInLeft">
+            <div class="market-header">
+                <h3><i class="fab fa-bitcoin"></i> Cryptocurrencies</h3>
+                <button class="refresh-btn"><i class="fas fa-sync-alt"></i></button>
+            </div>
+            <div class="price-ticker" id="crypto-data"></div>
+            <div class="chart-container">
+                <canvas id="crypto-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Forex Market -->
+        <div class="market-card animate__animated animate__fadeInRight">
+            <div class="market-header">
+                <h3><i class="fas fa-globe-americas"></i> Forex</h3>
+                <button class="refresh-btn"><i class="fas fa-sync-alt"></i></button>
+            </div>
+            <div class="price-ticker" id="forex-data"></div>
+            <div class="chart-container">
+                <canvas id="forex-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Stocks Market -->
+        <div class="market-card animate__animated animate__fadeInLeft">
+            <div class="market-header">
+                <h3><i class="fas fa-chart-line"></i> Indian Stocks</h3>
+                <button class="refresh-btn"><i class="fas fa-sync-alt"></i></button>
+            </div>
+            <div class="price-ticker" id="stocks-data"></div>
+            <div class="chart-container">
+                <canvas id="stocks-chart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="animate__animated animate__fadeInUp">
+        <div class="footer-content">
+            <div class="newsletter">
+                <h3>Subscribe to Our Newsletter</h3>
+                <form>
+                    <input type="email" placeholder="Your Email">
+                    <button type="submit">Subscribe</button>
+                </form>
+            </div>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-telegram"></i></a>
+                <a href="#"><i class="fab fa-whatsapp"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+    
+    <!-- Referral Link Handler -->
+    <script>
+        // Handle referral links
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const referralCode = urlParams.get('ref');
+            
+            if (referralCode) {
+                console.log('Referral code detected:', referralCode);
+                
+                // Store referral code in localStorage
+                localStorage.setItem('referralCode', referralCode);
+                
+                // Show success message
+                showReferralMessage(referralCode);
+                
+                // Auto-redirect to register page after 3 seconds
+                setTimeout(() => {
+                    window.location.href = 'user.html?form=register&ref=' + referralCode;
+                }, 3000);
+            }
+        });
+        
+        function showReferralMessage(referralCode) {
+            // Create and show referral message
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                z-index: 10000;
+                max-width: 300px;
+                animation: slideInRight 0.5s ease-out;
+            `;
+            
+            messageDiv.innerHTML = `
+                <h4 style="margin: 0 0 10px 0; font-size: 18px;">
+                    <i class="fas fa-gift"></i> Welcome!
+                </h4>
+                <p style="margin: 0 0 15px 0; font-size: 14px;">
+                    You've been invited by a friend!<br>
+                    Referral Code: <strong>${referralCode}</strong>
+                </p>
+                <p style="margin: 0; font-size: 12px; opacity: 0.9;">
+                    Redirecting to registration page...
+                </p>
+            `;
+            
+            document.body.appendChild(messageDiv);
+            
+            // Remove message after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
+        
+        // Add CSS animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
+<!-- Footer Section -->
+<footer class="animate__animated animate__fadeInUp">
+    <div class="footer-content">
+        <div class="contact-info">
+            <h3>Contact Us</h3>
+            <div class="contact-details">
+                <p><i class="fas fa-envelope"></i> support@theonewealthwave.com</p>
+                <p><i class="fas fa-map-marker-alt"></i> Office 123, Al Jaddaf Tower, Dubai, UAE</p>
+            </div>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-telegram"></i></a>
+                <a href="#"><i class="fab fa-whatsapp"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="copyright">
+        <p>© 2023 TheOneWealthWave. All Rights Reserved.</p>
+    </div>
+</footer>/

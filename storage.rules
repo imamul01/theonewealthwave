@@ -1,0 +1,192 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // 🔧 Utility Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(firestore.default)/documents/admins/$(request.auth.uid));
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidDocument() {
+      return request.resource.contentType.matches('image/.*|application/pdf|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    }
+    
+    function isValidSize(maxSizeMB) {
+      return request.resource.size <= maxSizeMB * 1024 * 1024;
+    }
+
+    // 🔐 User Profile Files
+    match /users/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && 
+        isValidDocument() && 
+        isValidSize(5);
+    }
+
+    // 📁 Deposit Screenshots
+    match /deposits/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+        isValidImage() && 
+        isValidSize(5);
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // 🖼️ Profile Pictures
+    match /profile-pics/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && 
+        isValidImage() && 
+        isValidSize(5);
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // 📄 KYC Documents
+    match /kyc/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+        isValidDocument() && 
+        isValidSize(10);
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // 📋 Support Ticket Attachments
+    match /support-attachments/{userId}/{ticketId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+        isValidDocument() && 
+        isValidSize(5);
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // 📊 Reports and Analytics
+    match /reports/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin() && 
+        request.resource.contentType.matches('application/pdf|application/vnd.ms-excel|application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') && 
+        isValidSize(10);
+      allow delete: if isAdmin();
+    }
+
+    // 🎯 Training Materials
+    match /training/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && 
+        request.resource.contentType.matches('application/pdf|image/.*|video/.*') && 
+        isValidSize(50);
+      allow delete: if isAdmin();
+    }
+
+    // 📢 Announcements and News
+    match /announcements/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && 
+        request.resource.contentType.matches('image/.*|application/pdf') && 
+        isValidSize(5);
+      allow delete: if isAdmin();
+    }
+
+    // 🏆 Rewards and Certificates
+    match /rewards/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin() && 
+        request.resource.contentType.matches('image/.*|application/pdf') && 
+        isValidSize(5);
+      allow delete: if isAdmin();
+    }
+
+    // 📈 ROI and Income Reports
+    match /income-reports/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin() && 
+        request.resource.contentType.matches('application/pdf|application/vnd.ms-excel|application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') && 
+        isValidSize(10);
+      allow delete: if isAdmin();
+    }
+
+    // 🔒 Private Documents
+    match /private/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+        isValidDocument() && 
+        isValidSize(10);
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // 🌐 Public Assets
+    match /public/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && 
+        request.resource.contentType.matches('image/.*|application/pdf|text/.*') && 
+        isValidSize(2);
+      allow delete: if isAdmin();
+    }
+
+    // 📱 App Assets (logos, icons, etc.)
+    match /assets/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && 
+        request.resource.contentType.matches('image/.*|text/.*|application/json') && 
+        isValidSize(1);
+      allow delete: if isAdmin();
+    }
+
+    // 🔄 Temporary Files
+    match /temp/{userId}/{fileName} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && 
+        isValidSize(5);
+      allow delete: if isOwner(userId);
+    }
+
+    // 📝 Backup Files
+    match /backups/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin() && 
+        request.resource.contentType.matches('application/zip|application/x-rar-compressed|application/octet-stream') && 
+        isValidSize(100);
+      allow delete: if isAdmin();
+    }
+
+    // 🎨 Custom Themes and Styles
+    match /themes/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && 
+        request.resource.contentType.matches('text/css|application/json|image/.*') && 
+        isValidSize(1);
+      allow delete: if isAdmin();
+    }
+
+    // 📋 Forms and Templates
+    match /templates/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && 
+        request.resource.contentType.matches('application/pdf|application/vnd.ms-excel|application/vnd.openxmlformats-officedocument.spreadsheetml.sheet|text/html') && 
+        isValidSize(5);
+      allow delete: if isAdmin();
+    }
+
+    // 🔐 Admin Only Files
+    match /admin/{fileName} {
+      allow read, write, delete: if isAdmin();
+    }
+
+    // 🚫 Default Deny Rule - Must be last
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+} 

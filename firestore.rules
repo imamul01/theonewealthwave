@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to read and write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Also allow if the document ID matches the user's UID
+      allow read, write: if request.auth != null && userId == request.auth.uid;
+    }
+    
+    // Per-user generic collections used in app
+    match /income/{incomeId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow read if no userId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.userId || resource.data.userId == request.auth.uid);
+    }
+    match /deposits/{depositId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow read if no userId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.userId || resource.data.userId == request.auth.uid);
+    }
+    match /withdrawals/{withdrawalId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow read if no userId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.userId || resource.data.userId == request.auth.uid);
+    }
+    match /tickets/{ticketId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow read if no userId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.userId || resource.data.userId == request.auth.uid);
+    }
+    // Some code paths use supportTickets (separate collection name)
+    match /supportTickets/{ticketId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow read if no userId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.userId || resource.data.userId == request.auth.uid);
+    }
+    match /kyc/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /referrals/{referralId} {
+      allow read: if request.auth != null && resource.data.referrerId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.referrerId == request.auth.uid;
+      // Allow read if no referrerId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.referrerId || resource.data.referrerId == request.auth.uid);
+    }
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || resource.data.user == request.auth.uid || resource.data.user == 'all');
+    }
+    match /userSettings/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Admin settings readable by logged-in users
+    match /adminSettings/{docId} {
+      allow read: if request.auth != null;
+    }
+
+    // Payment methods (user-owned documents)
+    match /paymentMethods/{methodId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow read if no userId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.userId || resource.data.userId == request.auth.uid);
+    }
+
+    // Activity and timeline (user-owned)
+    match /activityLog/{logId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow read if no userId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.userId || resource.data.userId == request.auth.uid);
+    }
+    match /userTimeline/{timelineId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow read if no userId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.userId || resource.data.userId == request.auth.uid);
+    }
+    match /recentActivity/{activityId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow read if no userId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.userId || resource.data.userId == request.auth.uid);
+    }
+
+    // Wallet
+    match /walletTransactions/{txId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.amount is number
+        && request.resource.data.amount >= 0
+        && request.resource.data.type in ['dailyIncome', 'deposit', 'withdrawal', 'manual'];
+      // Allow read if no userId field (for backward compatibility)
+      allow read: if request.auth != null && (!resource.data.userId || resource.data.userId == request.auth.uid);
+    }
+    match /userPayouts/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Admin collection
+    match /admins/{adminId} {
+      allow read, write: if request.auth != null && request.auth.uid == adminId;
+    }
+
+    // Admin full-access fallback
+    match /{document=**} {
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+  }
+}

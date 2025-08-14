@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Dashboard - Income Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .debug-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .debug-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border-left: 4px solid #007bff;
+        }
+        .error { border-left-color: #dc3545; }
+        .success { border-left-color: #28a745; }
+        .warning { border-left-color: #ffc107; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .income-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #28a745;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Dashboard - Income Check</h1>
+    
+    <div class="debug-section">
+        <h2>Authentication Status</h2>
+        <div id="authStatus" class="debug-item">Checking...</div>
+        <button onclick="checkAuth()">Check Auth</button>
+        <button onclick="signOut()">Sign Out</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>User Data</h2>
+        <div id="userData" class="debug-item">Loading...</div>
+        <button onclick="loadUserData()">Load User Data</button>
+        <button onclick="refreshData()">Refresh Data</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Income Calculations</h2>
+        <div id="incomeCalc" class="debug-item">Calculating...</div>
+        <button onclick="calculateIncome()">Calculate Income</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Database Check</h2>
+        <div id="dbCheck" class="debug-item">Checking...</div>
+        <button onclick="checkDatabase()">Check Database</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Income Display Test</h2>
+        <div class="income-display">
+            Total Income: <span id="totalIncomeDisplay">$0.00</span>
+        </div>
+        <div class="income-display">
+            ROI Income: <span id="roiIncomeDisplay">$0.00</span>
+        </div>
+        <div class="income-display">
+            Level Income: <span id="levelIncomeDisplay">$0.00</span>
+        </div>
+        <div class="income-display">
+            Daily Returns: <span id="dailyReturnsDisplay">$0.00</span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut as firebaseSignOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxGJwAqXjB8X8X8X8X8X8X8X8X8X8X8X8",
+            authDomain: "theonewealthwave.firebaseapp.com",
+            projectId: "theonewealthwave",
+            storageBucket: "theonewealthwave.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdefghijklmnop"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let userData = {};
+
+        // Check authentication status
+        function checkAuth() {
+            const authStatus = document.getElementById('authStatus');
+            if (currentUser) {
+                authStatus.innerHTML = `
+                    <div class="success">
+                        ✅ Authenticated as: ${currentUser.email}<br>
+                        UID: ${currentUser.uid}<br>
+                        Email Verified: ${currentUser.emailVerified}
+                    </div>
+                `;
+            } else {
+                authStatus.innerHTML = `
+                    <div class="error">
+                        ❌ Not authenticated<br>
+                        Please log in to continue
+                    </div>
+                `;
+            }
+        }
+
+        // Sign out
+        function signOut() {
+            firebaseSignOut(auth).then(() => {
+                console.log('Signed out successfully');
+                currentUser = null;
+                userData = {};
+                checkAuth();
+                document.getElementById('userData').innerHTML = 'Signed out';
+                document.getElementById('incomeCalc').innerHTML = 'Signed out';
+                document.getElementById('dbCheck').innerHTML = 'Signed out';
+            }).catch((error) => {
+                console.error('Sign out error:', error);
+            });
+        }
+
+        // Load user data
+        async function loadUserData() {
+            const userDataDiv = document.getElementById('userData');
+            if (!currentUser) {
+                userDataDiv.innerHTML = '<div class="error">❌ No user authenticated</div>';
+                return;
+            }
+
+            try {
+                userDataDiv.innerHTML = '<div class="warning">⏳ Loading user data...</div>';
+                
+                // Get user document
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    userData = userDoc.data();
+                    userDataDiv.innerHTML = `
+                        <div class="success">
+                            ✅ User data loaded successfully<br>
+                            Name: ${userData.name || 'N/A'}<br>
+                            Email: ${userData.email || 'N/A'}<br>
+                            Balance: $${(userData.balance || 0).toFixed(2)}<br>
+                            Is Active: ${userData.isActive ? 'Yes' : 'No'}<br>
+                            Total Deposits: $${(userData.totalDeposits || 0).toFixed(2)}<br>
+                            ROI Income: $${(userData.roiIncome || 0).toFixed(2)}<br>
+                            Level Income: $${(userData.levelIncome || 0).toFixed(2)}<br>
+                            Self Income: $${(userData.selfIncome || 0).toFixed(2)}<br>
+                            Reward Income: $${(userData.rewardIncome || 0).toFixed(2)}
+                        </div>
+                    `;
+                } else {
+                    userDataDiv.innerHTML = '<div class="error">❌ User document not found</div>';
+                }
+            } catch (error) {
+                userDataDiv.innerHTML = `<div class="error">❌ Error loading user data: ${error.message}</div>`;
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        // Calculate income
+        function calculateIncome() {
+            const incomeCalcDiv = document.getElementById('incomeCalc');
+            if (!currentUser || !userData) {
+                incomeCalcDiv.innerHTML = '<div class="error">❌ No user data available</div>';
+                return;
+            }
+
+            const totalIncome = (userData.selfIncome || 0) + (userData.levelIncome || 0) + 
+                              (userData.rewardIncome || 0) + (userData.roiIncome || 0);
+
+            incomeCalcDiv.innerHTML = `
+                <div class="success">
+                    ✅ Income calculation completed<br>
+                    Self Income: $${(userData.selfIncome || 0).toFixed(2)}<br>
+                    Level Income: $${(userData.levelIncome || 0).toFixed(2)}<br>
+                    Reward Income: $${(userData.rewardIncome || 0).toFixed(2)}<br>
+                    ROI Income: $${(userData.roiIncome || 0).toFixed(2)}<br>
+                    <strong>Total Income: $${totalIncome.toFixed(2)}</strong>
+                </div>
+            `;
+
+            // Update display
+            document.getElementById('totalIncomeDisplay').textContent = `$${totalIncome.toFixed(2)}`;
+            document.getElementById('roiIncomeDisplay').textContent = `$${(userData.roiIncome || 0).toFixed(2)}`;
+            document.getElementById('levelIncomeDisplay').textContent = `$${(userData.levelIncome || 0).toFixed(2)}`;
+            document.getElementById('dailyReturnsDisplay').textContent = `$${(userData.todayROI || 0).toFixed(2)}`;
+        }
+
+        // Check database
+        async function checkDatabase() {
+            const dbCheckDiv = document.getElementById('dbCheck');
+            if (!currentUser) {
+                dbCheckDiv.innerHTML = '<div class="error">❌ No user authenticated</div>';
+                return;
+            }
+
+            try {
+                dbCheckDiv.innerHTML = '<div class="warning">⏳ Checking database...</div>';
+                
+                // Check deposits
+                const depositsQuery = query(collection(db, 'deposits'), where('userId', '==', currentUser.uid));
+                const depositsSnapshot = await getDocs(depositsQuery);
+                
+                // Check income
+                const incomeQuery = query(collection(db, 'income'), where('userId', '==', currentUser.uid));
+                const incomeSnapshot = await getDocs(incomeQuery);
+                
+                // Check referrals
+                const referralsQuery = query(collection(db, 'referrals'), where('referrerId', '==', currentUser.uid));
+                const referralsSnapshot = await getDocs(referralsQuery);
+
+                dbCheckDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Database check completed<br>
+                        Deposits: ${depositsSnapshot.size} documents<br>
+                        Income Records: ${incomeSnapshot.size} documents<br>
+                        Referrals: ${referralsSnapshot.size} documents<br>
+                        <br>
+                        <strong>Deposit Details:</strong><br>
+                        ${depositsSnapshot.docs.map(doc => {
+                            const data = doc.data();
+                            return `- $${(data.amount || 0).toFixed(2)} (${data.status || 'unknown'})`;
+                        }).join('<br>') || 'No deposits found'}
+                    </div>
+                `;
+            } catch (error) {
+                dbCheckDiv.innerHTML = `<div class="error">❌ Error checking database: ${error.message}</div>`;
+                console.error('Error checking database:', error);
+            }
+        }
+
+        // Refresh data
+        function refreshData() {
+            loadUserData();
+            setTimeout(() => {
+                calculateIncome();
+                checkDatabase();
+            }, 1000);
+        }
+
+        // Listen for auth state changes
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            checkAuth();
+            if (user) {
+                loadUserData();
+            }
+        });
+
+        // Make functions global
+        window.checkAuth = checkAuth;
+        window.signOut = signOut;
+        window.loadUserData = loadUserData;
+        window.calculateIncome = calculateIncome;
+        window.checkDatabase = checkDatabase;
+        window.refreshData = refreshData;
+    </script>
+</body>
+</html>
